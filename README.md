@@ -9,7 +9,7 @@
 Many media center frontends and aggregators (e.g. **AIOStreams**, **Omni**, web players) require direct HTTP streams and reject `magnet:` / `infoHash` responses. This project runs a lightweight Go daemon *on the device itself* that:
 
 1. Exposes a **Stremio-compatible addon** on `127.0.0.1:8080`.
-2. Queries **Torrentio** with residential browser headers, filtering out incompatible/unplayable releases (CAM/TS, massive REMUXes, lossless TrueHD/DTS-HD audio, and non-HDR10 `DV.P5` files) and scoring candidates for Fire TV hardware decoding.
+2. Queries any **user-configured upstream Stremio stream addon** (via `-addon-url` or `P2P_ADDON_URL`) with residential browser headers, filtering out incompatible/unplayable releases (CAM/TS, massive REMUXes, lossless TrueHD/DTS-HD audio, and non-HDR10 `DV.P5` files) and scoring candidates for Fire TV hardware decoding.
 3. Exposes **two clean Auto-Best stream options** (`⚡ 4K Auto-Best` and `⚡ 1080p Auto-Best`) so aggregators like AIOStreams never bury the fastest swarm.
 4. **Pre-warms** top candidates in the background as soon as the user opens a title's detail screen (`GET /stream/…`) and runs a real-time **Swarm Race** across the top 4 candidates when Play is pressed, locking onto whichever swarm delivers the initial video piece fastest.
 5. Downloads sequentially in **RAM only** (`MemStorage` ring buffer capped at 64–100 MiB) and immediately drops non-selected torrents so **100% of RAM and network bandwidth** go to the active stream.
@@ -69,7 +69,7 @@ The instant a candidate wins the Swarm Race:
 * **Penalizes** Dolby Vision Profile 5 (`DV.P5`) streams lacking an `HDR10` fallback layer and `.mp4` containers with end-of-file `moov` atoms in favor of fast-start `.mkv` `WEB-DL`/`WEBRip` `HEVC` streams with `DDP 5.1` / `EAC3` / `AAC` audio.
 * **Audio Language Priority & Foreign Dub Protection (`IsForeignDubOnly`)**: Rewards `MULTi` / `DUAL` / `LATINO` / `SPA` / `ENG` releases (`+75` score bonus) and demotes exclusive foreign dubs (`RUS`, `TRUEFRENCH`/`VFF` without `MULTi`, `ITA`, `GERMAN`, `UKR`, `HINDI`) so a high-seed Russian/French-only dub never wins the Swarm Race over English/Spanish/Multi audio tracks.
 * **Elastic Seed Threshold (`ElasticMinSeeds`)**: Enforces strict seed floors (`>= 30` for 4K, `>= 25` for 1080p, `>= 15` global) on blockbusters, and automatically relaxes down to `>= 5` seeds when a classic, indie, or niche title has no candidates meeting the strict floor.
-* **Multi-Indexer Failover & 4K Enrichment (`DefaultFallbackEndpoints`)**: Rotates across Torrentio and backup Stremio indexers (`KnightCrawler`, `Comet`, `MediaFusion`) with a 3s timeout per endpoint, and merges 4K results from backup indexers when the primary indexer returns only 1080p.
+* **Multi-Indexer Failover & 4K Enrichment**: Rotates across the primary upstream addon and any configured backup mirrors (via `P2P_FALLBACK_URLS` or `ScraperConfig`) with a 3s timeout per endpoint, and merges 4K results from backup indexers when the primary indexer returns only 1080p.
 * **Next-Episode Binge Auto-Prewarm (`maybePrewarmNextEpisode`)**: When streaming a series episode (`ttXXXX:S:E`) and playback reaches the 85%–97% window (end credits), automatically resolves and pre-warms `ttXXXX:S:(E+1)` in the background.
 * **Device-Aware RAM Profile (`defaultCacheMB`)**: Defaults to `64 MiB` on Android/Fire OS (`48 MiB` forward readahead + `16 MiB` rewind cushion) and `100 MiB` on desktop macOS/Linux/Windows (`75 MiB` forward readahead + `25 MiB` instant-rewind cushion).
 
@@ -81,7 +81,7 @@ The instant a candidate wins the Swarm Race:
 |---|---|
 | `core/cmd/daemon/main.go` | CLI entry point, flags, Android DNS fallback, quiet probe-cancel logger, graceful shutdown |
 | `core/pkg/bridge/handlers.go` | HTTP endpoints (`/manifest.json`, `/stream/:type/:id.json`, `/play/adaptive`, `/play`, `/health`), Swarm Race & session pinning |
-| `core/pkg/bridge/scraper.go` | Torrentio client, Fire Stick hardware scoring, `IsAdaptive4K`/`IsAdaptive1080p` classifiers, `SelectRaceLineup`, in-memory TTL cache |
+| `core/pkg/bridge/scraper.go` | Stremio addon client, Fire Stick hardware scoring, `IsAdaptive4K`/`IsAdaptive1080p` classifiers, `SelectRaceLineup`, in-memory TTL cache |
 | `core/pkg/torrent/engine.go` | `anacrolix/torrent` client tuned for low RAM, background `Warm`, safe reference-counted `DropOtherTorrents`/`DropHash`, multi-file episode picker |
 | `core/pkg/torrent/memstorage.go` | Strict RAM-only `storage.ClientImpl` ring buffer with playhead-aware eviction (zero disk writes) |
 | `core/pkg/torrent/stream_reader.go` | `PlayableStream` (`io.ReadSeekCloser`), `Prebuffer`, and `promoteToFullStream` |
@@ -131,7 +131,7 @@ curl http://127.0.0.1:8080/health
 -upload-kbps 256       Upload rate limit in KiB/s
 -no-upload             Disable uploading to peers
 -qualities ""          Optional comma-separated quality filter (e.g. 4k,1080p)
--torrentio-url "..."   Upstream Torrentio base URL (may include provider/filter config segment)
+-addon-url "..."       Upstream Stremio stream addon URL (or set P2P_ADDON_URL env var)
 -dns auto              DNS resolver: 'auto' (public resolvers if /etc/resolv.conf is missing), 'system', or host:port list
 -log-level info        Log level: debug | info | warn | error
 -watch-stdin           Exit automatically when stdin closes (prevents orphan processes on Android)

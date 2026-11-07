@@ -10,6 +10,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -23,18 +24,11 @@ import (
 const browserUA = "Mozilla/5.0 (Linux; Android 11; AFTMM Build/RS8132.2610N; wv) " +
 	"AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/124.0.0.0 Mobile Safari/537.36"
 
-// DefaultTorrentioURL is the primary upstream addon base URL. A Torrentio configuration segment
-// may be appended (e.g. https://torrentio.strem.fun/providers=yts,eztv|sort=seeders).
-const DefaultTorrentioURL = "https://torrentio.strem.fun"
+// EnvAddonURL defines the environment variable used to supply the primary Stremio stream addon URL.
+const EnvAddonURL = "P2P_ADDON_URL"
 
-// DefaultFallbackEndpoints defines the ordered list of Stremio-compatible torrent indexers tried
-// when the primary endpoint returns HTTP >= 400 (403/429/5xx) or exceeds DefaultEndpointTimeout.
-var DefaultFallbackEndpoints = []string{
-	DefaultTorrentioURL,
-	"https://knightcrawler.elfhosted.com",
-	"https://comet.elfhosted.com",
-	"https://mediafusion.elfhosted.com",
-}
+// EnvFallbackURLs defines the environment variable for comma-separated backup addon URLs.
+const EnvFallbackURLs = "P2P_FALLBACK_URLS"
 
 // Hardware / residential bandwidth limits for Fire TV Stick (64 MB RAM ring buffer) and TTL cache.
 const (
@@ -55,7 +49,7 @@ const (
 )
 
 // ErrBlocked is returned when the upstream answers 403/429 (typically Cloudflare).
-var ErrBlocked = errors.New("torrentio blocked the request (HTTP 403/429)")
+var ErrBlocked = errors.New("upstream addon blocked the request (HTTP 403/429)")
 
 var (
 	idRe       = regexp.MustCompile(`^tt\d{1,10}(?::\d{1,4}:\d{1,4})?$`)
@@ -88,7 +82,7 @@ func IsForeignDubOnly(text string) bool {
 	return foreignDubOnlyRe.MatchString(text) && !prefLangRe.MatchString(text)
 }
 
-// Candidate is a playable torrent offered by Torrentio, scored for Fire TV hardware.
+// Candidate is a playable torrent offered by an upstream Stremio addon, scored for Fire TV hardware.
 type Candidate struct {
 	InfoHash      string         `json:"infoHash"`
 	Name          string         `json:"name"`
@@ -269,11 +263,27 @@ func isAdaptive1080pWithMinSeeds(c Candidate, typ string, minSeeds int, allowFor
 	return true
 }
 
-// ScraperConfig configures the Torrentio client, mirror fallback, TTL cache, and Fire Stick filtering profile.
+// DefaultFallbackEndpoints defines backup endpoints parsed from P2P_FALLBACK_URLS if present.
+func DefaultFallbackEndpoints() []string {
+	if env := strings.TrimSpace(os.Getenv(EnvFallbackURLs)); env != "" {
+		var out []string
+		for _, u := range strings.Split(env, ",") {
+			if clean := strings.TrimRight(strings.TrimSpace(u), "/"); clean != "" {
+				out = append(out, clean)
+			}
+		}
+		if len(out) > 0 {
+			return out
+		}
+	}
+	return nil
+}
+
+// ScraperConfig configures the upstream Stremio-compatible addon client, fallback mirrors, TTL cache, and hardware profile.
 type ScraperConfig struct {
 	BaseURL string
 	// FallbackURLs lists alternative Stremio-compatible endpoints tried in order when BaseURL
-	// returns HTTP >= 400 (e.g. 403/429) or exceeds EndpointTimeout. Defaults to DefaultFallbackEndpoints[1:].
+	// returns HTTP >= 400 (e.g. 403/429) or exceeds EndpointTimeout.
 	FallbackURLs []string
 	// EndpointTimeout bounds each individual upstream endpoint attempt before failing over (default 3s).
 	EndpointTimeout time.Duration
@@ -303,7 +313,7 @@ type StreamsResponse struct {
 	Candidates []Candidate `json:"streams"`
 }
 
-// Scraper queries Torrentio (and fallback mirrors) and returns ordered playable streams tailored for Fire TV.
+// Scraper queries an upstream Stremio stream addon (and fallback mirrors) and returns ordered playable streams tailored for Fire TV.
 type Scraper struct {
 	base            string
 	endpoints       []string
@@ -369,17 +379,24 @@ func newBrowserHTTPClient() *http.Client {
 }
 
 // NewScraper creates a Scraper, applying Fire Stick defaults for unset config fields.
+// If cfg.BaseURL is empty, it checks the P2P_ADDON_URL environment variable.
 func NewScraper(cfg ScraperConfig) *Scraper {
 	if cfg.BaseURL == "" {
-		cfg.BaseURL = DefaultTorrentioURL
+		cfg.BaseURL = os.Getenv(EnvAddonURL)
 	}
 	primary := strings.TrimRight(strings.TrimSpace(cfg.BaseURL), "/")
-	endpoints := []string{primary}
+	var endpoints []string
+	if primary != "" {
+		endpoints = append(endpoints, primary)
+	}
 	fallbacks := cfg.FallbackURLs
 	if fallbacks == nil {
-		fallbacks = DefaultFallbackEndpoints
+		fallbacks = DefaultFallbackEndpoints()
 	}
-	seenEP := map[string]bool{primary: true}
+	seenEP := make(map[string]bool)
+	if primary != "" {
+		seenEP[primary] = true
+	}
 	for _, fb := range fallbacks {
 		clean := strings.TrimRight(strings.TrimSpace(fb), "/")
 		if clean != "" && !seenEP[clean] {
@@ -664,7 +681,7 @@ func (s *Scraper) ClassifyStreams(ctx context.Context, typ, id string) (Adaptive
 	return Classify(cands, typ), nil
 }
 
-// Streams returns all valid, filtered, and scored candidates from Torrentio.
+// Streams returns all valid, filtered, and scored candidates from the upstream Stremio addon.
 func (s *Scraper) Streams(ctx context.Context, typ, id string) ([]Candidate, error) {
 	cands, err := s.Fetch(ctx, typ, id)
 	if err != nil {
@@ -778,6 +795,9 @@ func has4KCandidate(cands []Candidate) bool {
 }
 
 func (s *Scraper) fetchAcrossEndpoints(ctx context.Context, typ, pathKey string) ([]Candidate, error) {
+	if len(s.endpoints) == 0 {
+		return nil, errors.New("no upstream Stremio addon configured (set -addon-url or P2P_ADDON_URL)")
+	}
 	var (
 		lastErr           error
 		anyOK             bool
@@ -828,7 +848,7 @@ func (s *Scraper) fetchAcrossEndpoints(ctx context.Context, typ, pathKey string)
 	return nil, lastErr
 }
 
-type torrentioResponse struct {
+type stremioAddonResponse struct {
 	Streams []struct {
 		Name          string         `json:"name"`
 		Title         string         `json:"title"`
@@ -879,7 +899,7 @@ func (s *Scraper) fetchOnceFromBase(ctx context.Context, base, typ, key string) 
 
 	resp, err := s.hc.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("torrentio request (%s): %w", base, err)
+		return nil, fmt.Errorf("upstream addon request (%s): %w", base, err)
 	}
 	defer resp.Body.Close()
 
@@ -890,9 +910,9 @@ func (s *Scraper) fetchOnceFromBase(ctx context.Context, base, typ, key string) 
 		return nil, fmt.Errorf("upstream %s returned HTTP %d", base, resp.StatusCode)
 	}
 
-	var tr torrentioResponse
+	var tr stremioAddonResponse
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 8<<20)).Decode(&tr); err != nil {
-		return nil, fmt.Errorf("decoding torrentio response (blocked by a challenge page?): %w", err)
+		return nil, fmt.Errorf("decoding upstream addon response (blocked by a challenge page?): %w", err)
 	}
 
 	maxBytes := s.maxBytesForType(typ)
@@ -991,7 +1011,7 @@ func (s *Scraper) fetchOnceFromBase(ctx context.Context, base, typ, key string) 
 	return out, nil
 }
 
-// formatStreamName preserves Torrentio's name while ensuring key resolution/HDR tags (`4K HDR`,
+// formatStreamName preserves the upstream release name while ensuring key resolution/HDR tags (`4K HDR`,
 // `4K DV`, `1080p`, etc.) are present for AIOStreams/Stremio parsers.
 func formatStreamName(rawName, fullText, quality string) string {
 	name := strings.TrimSpace(rawName)

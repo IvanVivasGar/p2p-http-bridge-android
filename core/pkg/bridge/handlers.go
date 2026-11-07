@@ -170,7 +170,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, context.Canceled) {
 			return
 		}
-		s.log.Error("torrentio lookup failed", "type", typ, "id", id, "err", err)
+		s.log.Error("upstream addon lookup failed", "type", typ, "id", id, "err", err)
 		w.Header().Set("X-Bridge-Error", err.Error())
 		writeJSON(w, http.StatusOK, empty)
 		return

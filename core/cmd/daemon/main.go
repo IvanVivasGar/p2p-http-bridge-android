@@ -1,6 +1,6 @@
 // Command daemon is the P2P-to-HTTP streaming bridge: a Stremio-compatible addon that resolves
-// torrents through Torrentio and streams them sequentially (RAM only) over HTTP with
-// Range support, listening on 127.0.0.1.
+// torrent streams through an upstream Stremio addon (configured via -addon-url or P2P_ADDON_URL)
+// and streams them sequentially (RAM only) over HTTP with Range support, listening on 127.0.0.1.
 package main
 
 import (
@@ -79,7 +79,7 @@ func main() {
 		cacheMB    = flag.Int("cache-mb", defaultCacheMB(), "RAM cache for torrent data in MiB (clamped to 16..100)")
 		uploadKBps = flag.Int("upload-kbps", 256, "upload limit in KiB/s")
 		noUpload   = flag.Bool("no-upload", false, "never upload to peers")
-		torrentio  = flag.String("torrentio-url", bridge.DefaultTorrentioURL, "Torrentio base URL (may include a config segment)")
+		addonURL   = flag.String("addon-url", os.Getenv(bridge.EnvAddonURL), "Upstream Stremio stream addon URL (or set P2P_ADDON_URL)")
 		qualities  = flag.String("qualities", "", "optional comma-separated quality filter (e.g. 4k,1080p,720p); empty keeps all non-CAM qualities")
 		dns        = flag.String("dns", "auto", "DNS: 'auto' (public resolvers if /etc/resolv.conf is missing), 'system', or comma separated host:port list")
 		logLevel   = flag.String("log-level", "info", "debug|info|warn|error")
@@ -134,7 +134,7 @@ func main() {
 			quals = append(quals, q)
 		}
 	}
-	scraper := bridge.NewScraper(bridge.ScraperConfig{BaseURL: *torrentio, Qualities: quals})
+	scraper := bridge.NewScraper(bridge.ScraperConfig{BaseURL: *addonURL, Qualities: quals})
 
 	addr := net.JoinHostPort(*host, fmt.Sprint(*port))
 	ln, err := net.Listen("tcp", addr)
@@ -180,7 +180,7 @@ func main() {
 }
 
 // setupDNS fixes name resolution on Android, where there is no /etc/resolv.conf and Go would
-// otherwise query 127.0.0.1:53 and fail for every host (Torrentio, trackers, DHT bootstrap).
+// otherwise query 127.0.0.1:53 and fail for every host (upstreams, trackers, DHT bootstrap).
 func setupDNS(log *slog.Logger, mode string) {
 	var servers []string
 	switch mode {
