@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">P2P HTTP Bridge</string>
+    <string name="title">P2P → HTTP Bridge</string>
+    <string name="btn_start">Iniciar</string>
+    <string name="btn_stop">Detener</string>
+    <string name="port_label">Puerto</string>
+    <string name="autostart">Iniciar con el sistema</string>
+    <string name="log_label">Registro en vivo</string>
+    <string name="state_stopped">Detenido</string>
+    <string name="state_starting">Iniciando…</string>
+    <string name="state_running">Activo en 127.0.0.1:%1$d</string>
+    <string name="state_restarting">Reiniciando en %1$d s…</string>
+    <string name="state_error">Error: %1$s</string>
+    <string name="notif_channel">Servicio P2P Bridge</string>
+    <string name="notif_title">P2P HTTP Bridge</string>
+    <string name="notif_stop">Detener</string>
+    <string name="port_hint">OK: ±1 · mantener OK: ±100</string>
+</resources>

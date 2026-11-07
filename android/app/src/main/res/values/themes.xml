@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#10141C</color>
+    <color name="panel">#1A202C</color>
+    <color name="text">#E6EAF2</color>
+    <color name="text_dim">#8A94A8</color>
+    <color name="accent">#4F8CFF</color>
+    <color name="ok">#4ADE80</color>
+    <color name="warn">#FBBF24</color>
+    <color name="err">#F87171</color>
+
+    <style name="Theme.Bridge" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:textColor">@color/text</item>
+    </style>
+</resources>
