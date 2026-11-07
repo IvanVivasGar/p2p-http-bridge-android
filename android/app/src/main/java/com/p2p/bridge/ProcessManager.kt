@@ -98,9 +98,10 @@ class ProcessManager(private val context: Context, private val callback: Callbac
 
         val cmd = listOf(
             binary.absolutePath,
-            "-host", "127.0.0.1",
+            "-host", "0.0.0.0",
             "-port", port.toString(),
             "-cache-mb", cacheMb.toString(),
+            "-addon-url", "https://torrentio.strem.fun",
             // The daemon exits when our stdin pipe closes, i.e. when this app process dies
             // (e.g. killed by the low-memory killer). Prevents orphans holding the port.
             "-watch-stdin",
@@ -111,6 +112,7 @@ class ProcessManager(private val context: Context, private val callback: Callbac
         pb.environment().apply {
             put("HOME", context.filesDir.absolutePath)
             put("TMPDIR", context.cacheDir.absolutePath)
+            put("P2P_FALLBACK_URLS", "https://knightcrawler.elfhosted.com,https://comet.elfhosted.com")
         }
 
         val process = pb.start()

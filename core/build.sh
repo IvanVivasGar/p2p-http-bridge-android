@@ -85,6 +85,7 @@ build_abi() {
     (cd "$ROOT" && env \
       CGO_ENABLED=1 GOOS=android GOARCH="$goarch" ${extra_env[@]+"${extra_env[@]}"} \
       CC="$TOOLCHAIN/$cc" CXX="$TOOLCHAIN/$cxx" \
+      CGO_LDFLAGS="-static-libstdc++" \
       go build -trimpath -buildvcs=false -ldflags "$ldflags" -o "$out" ./cmd/daemon)
   else
     (cd "$ROOT" && env \

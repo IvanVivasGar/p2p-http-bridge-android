@@ -1,0 +1,110 @@
+{
+  "android/app/build.gradle.kts": {
+    "mtime": 1794016136.2763746,
+    "seen": 1794071360.748217,
+    "ast_hash": "1d123cf2c0d8f8c54764ef9a375427c0",
+    "semantic_hash": "1d123cf2c0d8f8c54764ef9a375427c0"
+  },
+  "android/app/src/main/java/com/p2p/bridge/BootReceiver.kt": {
+    "mtime": 1794016264.2933414,
+    "seen": 1794071360.74822,
+    "ast_hash": "0759d15047390457d22b5d8aa6ebbe3e",
+    "semantic_hash": "0759d15047390457d22b5d8aa6ebbe3e"
+  },
+  "android/app/src/main/java/com/p2p/bridge/BridgeService.kt": {
+    "mtime": 1794016264.2806492,
+    "seen": 1794071360.7482219,
+    "ast_hash": "cf2fbd45959a86b4c2e148be25be6c11",
+    "semantic_hash": "cf2fbd45959a86b4c2e148be25be6c11"
+  },
+  "android/app/src/main/java/com/p2p/bridge/MainActivity.kt": {
+    "mtime": 1794016319.3372188,
+    "seen": 1794071360.7482219,
+    "ast_hash": "e123540f21e954eac0d1bc55b34f06f0",
+    "semantic_hash": "e123540f21e954eac0d1bc55b34f06f0"
+  },
+  "android/app/src/main/java/com/p2p/bridge/ProcessManager.kt": {
+    "mtime": 1794032470.0121655,
+    "seen": 1794071360.748223,
+    "ast_hash": "886902db480a446d271102466affe794",
+    "semantic_hash": "886902db480a446d271102466affe794"
+  },
+  "android/build.gradle.kts": {
+    "mtime": 1794016136.2618,
+    "seen": 1794071360.748223,
+    "ast_hash": "435c2552f106754fa755f59dcde713d4",
+    "semantic_hash": "435c2552f106754fa755f59dcde713d4"
+  },
+  "android/settings.gradle.kts": {
+    "mtime": 1794016136.250406,
+    "seen": 1794071360.748224,
+    "ast_hash": "d52f23d5a6214e1936f04410cf57d2b3",
+    "semantic_hash": "d52f23d5a6214e1936f04410cf57d2b3"
+  },
+  "core/build.sh": {
+    "mtime": 1794030505.657065,
+    "seen": 1794071360.748225,
+    "ast_hash": "2505e541dd660d83079fa514c6c65986",
+    "semantic_hash": "2505e541dd660d83079fa514c6c65986"
+  },
+  "core/cmd/daemon/main.go": {
+    "mtime": 1794028111.8449392,
+    "seen": 1794071360.748225,
+    "ast_hash": "15b1e8aaf69c1b3889e4b864667f55ef",
+    "semantic_hash": "15b1e8aaf69c1b3889e4b864667f55ef"
+  },
+  "core/go.mod": {
+    "mtime": 1794015972.4639006,
+    "seen": 1794071360.7482262,
+    "ast_hash": "4306d5c761fc3db85215a4eb1f59fb7f",
+    "semantic_hash": "4306d5c761fc3db85215a4eb1f59fb7f"
+  },
+  "core/pkg/bridge/handlers.go": {
+    "mtime": 1794028111.94105,
+    "seen": 1794071360.7482271,
+    "ast_hash": "67e9883626816b5c9dbda648241b6cbe",
+    "semantic_hash": "67e9883626816b5c9dbda648241b6cbe"
+  },
+  "core/pkg/bridge/handlers_test.go": {
+    "mtime": 1794025699.1902962,
+    "seen": 1794071360.7482271,
+    "ast_hash": "3ddfac913d7a0253dfc310b9318db6ed",
+    "semantic_hash": "3ddfac913d7a0253dfc310b9318db6ed"
+  },
+  "core/pkg/bridge/scraper.go": {
+    "mtime": 1794028112.0311503,
+    "seen": 1794071360.748228,
+    "ast_hash": "c1202f029eb6e47357c8d218a7f75235",
+    "semantic_hash": "c1202f029eb6e47357c8d218a7f75235"
+  },
+  "core/pkg/bridge/scraper_test.go": {
+    "mtime": 1794025676.6175222,
+    "seen": 1794071360.748228,
+    "ast_hash": "832f3d809597c0ee796111bbbdfada9f",
+    "semantic_hash": "832f3d809597c0ee796111bbbdfada9f"
+  },
+  "core/pkg/torrent/engine.go": {
+    "mtime": 1794024179.5041888,
+    "seen": 1794071360.748229,
+    "ast_hash": "25b9dd1e98f1facca147e6fb568f5be4",
+    "semantic_hash": "25b9dd1e98f1facca147e6fb568f5be4"
+  },
+  "core/pkg/torrent/engine_test.go": {
+    "mtime": 1794016808.748063,
+    "seen": 1794071360.74823,
+    "ast_hash": "c46f7363d6c38f90fe11985eeb0f2aa2",
+    "semantic_hash": "c46f7363d6c38f90fe11985eeb0f2aa2"
+  },
+  "core/pkg/torrent/memstorage.go": {
+    "mtime": 1794022877.953262,
+    "seen": 1794071360.74823,
+    "ast_hash": "2da81bee7cf1fe67abf4dea2914e241c",
+    "semantic_hash": "2da81bee7cf1fe67abf4dea2914e241c"
+  },
+  "core/pkg/torrent/stream_reader.go": {
+    "mtime": 1794022504.9274304,
+    "seen": 1794071360.748231,
+    "ast_hash": "289758579d7ce256f4b85e29016c3905",
+    "semantic_hash": "289758579d7ce256f4b85e29016c3905"
+  }
+}
